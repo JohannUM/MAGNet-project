@@ -15,14 +15,12 @@
 
 if (!requireNamespace("here", quietly = TRUE)) install.packages("here")
 if (!requireNamespace("ggplot2", quietly = TRUE)) install.packages("ggplot2")
-if (!requireNamespace("MatchIt", quietly = TRUE)) install.packages("MatchIt")
 
 
 # Load the necessary libraries -------------------------------------------------
 
 library(here)
 library(ggplot2)
-library(MatchIt)
 
 # Load the phenotype data ------------------------------------------------------
 
