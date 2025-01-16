@@ -48,7 +48,7 @@ m.out <- matchit(Diabetes ~ age + race + gender + weight + height +
 
 # Checking balance after full matching -----------------------------------------
 
-summary(m.out, un = FALSE)
+summary(m.out, un = TRUE)
 plot(m.out, type = "jitter", interactive = FALSE)
 plot(m.out, type = "density", interactive = FALSE,
      which.xs = ~age + race + gender + weight + height + Hypertension)
