@@ -54,7 +54,7 @@ plot(m.out, type = "density", interactive = FALSE,
      which.xs = ~age + race + gender + weight + height + Hypertension)
 plot(summary(m.out))
 
-# Save Project Dataset to .csv file --------------------------------------------
+# Save matched phenotype data to .csv file -------------------------------------
 
 m.data <- match_data(m.out)
 write.csv(m.data, file = "MAGNet_PhenoData_Matched.csv")
