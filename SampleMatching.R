@@ -28,8 +28,9 @@ library(optmatch)
 
 # Load the phenotype data ------------------------------------------------------
 
-setwd(here("MAGNet-project/data"))
+setwd(here("data"))
 phenoData <- read.csv("MAGNet_PhenoData_Processed.csv", row.names = 1)
+phenoData1 <- read.csv("MAGNet_PhenoData_Processed.csv", row.names = 1)
 
 # Convert Diabetes to numeric --------------------------------------------------
 
@@ -57,6 +58,36 @@ plot(summary(m.out))
 # Save matched phenotype data to .csv file -------------------------------------
 
 m.data <- match_data(m.out)
-write.csv(m.data, file = "MAGNet_PhenoData_Matched.csv")
+write.csv(m.data, file = "MAGNet_PhenoData_Matched_Diabetes.csv")
+
+################################################################################
+
+# Convert Diabetes to numeric --------------------------------------------------
+
+phenoData1$race[which(phenoData1$race == "AA")] <- 1
+phenoData1$race[which(phenoData1$race == "Caucasian")] <- 0
+phenoData1$race = as.numeric(as.character(phenoData1$race)) 
+
+# Optimal matching on a probit PS ----------------------------------------------
+
+m.out1 <- matchit(race ~ age + gender + weight + height + Diabetes + 
+                   Hypertension,
+                 data = phenoData1,
+                 method = "optimal",
+                 distance = "glm",
+                 link = "probit")
+
+# Checking balance after full matching -----------------------------------------
+
+summary(m.out1, un = FALSE)
+plot(m.out1, type = "jitter", interactive = FALSE)
+plot(m.out1, type = "density", interactive = FALSE,
+     which.xs = ~age + gender + weight + height + Diabetes + Hypertension)
+plot(summary(m.out1))
+
+# Save matched phenotype data to .csv file -------------------------------------
+
+m.data1 <- match_data(m.out1)
+write.csv(m.data1, file = "MAGNet_PhenoData_Matched_Ethnicity.csv")
 
 ################################################################################

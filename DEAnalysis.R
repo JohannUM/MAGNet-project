@@ -52,3 +52,5 @@ dds <- DESeq(dds)
 
 resultsNames(dds) # lists the coefficients
 res <- results(dds, name="Diabetes_Diabetic_vs_Non.Diabetic")
+
+################################################################################
