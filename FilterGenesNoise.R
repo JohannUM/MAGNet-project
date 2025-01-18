@@ -35,36 +35,33 @@ if (!all(rownames(data_expression) == rownames(data_exon_lengths))) {
 
 # Calculate expression above noise ------------------------------------------------
 
-ensembl <- useEnsembl("ensembl", mirror = "useast", dataset = "hsapiens_gene_ensembl")
+# if the info needs to be fetched again use the following code
+# ensembl <- useEnsembl("ensembl", mirror = "www", dataset = "hsapiens_gene_ensembl")
 
-gene_info <- getBM(
-    attributes = c("ensembl_gene_id", "chromosome_name"),
-    filters = "ensembl_gene_id",
-    values = rownames(data_log),
-    mart = ensembl
-)
-
-rownames(gene_info) <- gene_info$ensembl_gene_id
-
-# Get gene symbols and Entrez IDs
-# annotations <- AnnotationDbi::select(
-#     org.Hs.eg.db,
-#     keys = rownames(data_log),
-#     columns = c("SYMBOL", "ENTREZID"),
-#     keytype = "ENSEMBL"
+# gene_info_all <- getBM(
+#     attributes = c(
+#         "ensembl_gene_id", "chromosome_name", "external_gene_name", "gene_biotype",
+#         "description", "start_position", "end_position", "strand",
+#         "transcript_count", "entrezgene_id", "hgnc_symbol"
+#     ),
+#     mart = ensembl
 # )
-# annotations <- annotations[!duplicated(annotations$ENSEMBL), ]
-# # Add chromosome information from TxDb
-# txdb <- TxDb.Hsapiens.UCSC.hg38.knownGene
+# go_info <- getBM(
+#     attributes = c("ensembl_gene_id", "go_id", "go_linkage_type", "namespace_1003", "name_1006"),
+#     filters = "ensembl_gene_id",
+#     values = rownames(data_log),
+#     mart = ensembl
+# )
 
-# # Map Ensembl IDs to chromosome information
-# chromosome_data <- genes(txdb, columns = c("gene_id", "tx_name", "tx_chrom"))
-# chromosome_mapping <- as.data.frame(chromosome_data)
+# gene_info_all_no_duplicates <- gene_info_all[!duplicated(gene_info_all$ensembl_gene_id), ]
 
-# # Merge annotations with chromosome data
-# final_annotations <- merge(annotations, chromosome_mapping, by.x = "ENTREZID", by.y = "gene_id", all.x = TRUE)
+# rownames(gene_info_all_no_duplicates) <- gene_info_all_no_duplicates$ensembl_gene_id
+# saveRDS(gene_info_all_no_duplicates, "gene_info_all.RDS")
+# saveRDS(go_info, "go_info.RDS")
 
-# rownames(final_annotations) <- final_annotations$ENSEMBL
+gene_info_all <- readRDS("gene_info_all.RDS")
+
+gene_info <- gene_info_all[rownames(gene_info_all) %in% rownames(data_log), ]
 
 cpm2fpkm <- function(x) {
     exon_lengths_kb <- data_exon_lengths[, 1] / 1E3

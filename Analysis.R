@@ -17,12 +17,12 @@ allowWGCNAThreads()
 setwd(here("data"))
 
 # load the previously filtered and processed data
-data_expression <- readRDS("data_expression_filtered.RDS")
-data_samples <- readRDS("data_samples_filtered.RDS")
+data_expression <- readRDS("final/data_expression_filtered_magnet.RDS")
+data_samples <- read.csv("MAGNet_PhenoData_Matched.csv", row.names = 1)
 trait_data <- readRDS("trait_data.RDS")
 
 # load module_eigengenes, module_labels, module_colors and gene_tree
-load(file = "network-construction.RData")
+load(file = "network_construction.RData")
 
 data_expression <- t(data_expression) # have to transpose it here to work with the WGCNA functions
 
