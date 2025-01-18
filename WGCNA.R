@@ -21,8 +21,8 @@ allowWGCNAThreads()
 setwd(here("data"))
 
 # load the previously filtered and processed data
-data_expression <- readRDS("data_expression_filtered.RDS")
-data_samples <- readRDS("data_samples_filtered.RDS")
+data_expression <- readRDS("final/data_expression_filtered_magnet.RDS")
+data_samples <- read.csv("MAGNet_PhenoData_Matched.csv", row.names = 1)
 
 gsg <- goodSamplesGenes(data_expression, verbose = 3)
 print(gsg$allOK)
@@ -78,7 +78,7 @@ plot(sft$fitIndices[, 1], sft$fitIndices[, 5], xlab = "Soft Threshold (power)", 
 text(sft$fitIndices[, 1], sft$fitIndices[, 5], labels = powers, cex = cex1, col = "red")
 
 # picked the soft threshold 4 because of the scale free topology fit
-soft_power <- 4
+soft_power <- 7
 
 # Network construction and module detection ------------------------------------------------
 adjacency <- adjacency(data_expression, power = soft_power)
@@ -146,4 +146,4 @@ module_colors <- merged_colors
 module_eigengenes <- merged_ME
 module_labels <- match(module_colors, colors) - 1
 
-save(module_eigengenes, module_labels, module_colors, gene_tree, file = "network-construction.RData")
+save(module_eigengenes, module_labels, module_colors, gene_tree, file = "network_construction.RData")
