@@ -26,31 +26,41 @@ library(here)
 # Load the data ----------------------------------------------------------------
 
 setwd(here("data"))
-phenoData <- read.csv("MAGNet_PhenoData_Matched.csv", row.names = 1)
+phenoData1 <- read.csv("MAGNet_PhenoData_Matched_Diabetes.csv", row.names = 1)
+phenoData2 <- read.csv("MAGNet_PhenoData_Matched_Ethnicity.csv", row.names = 1)
 rawCounts <- read.csv("MAGNet_RawCounts.csv", row.names = 1)
 
 # Extract gene expression data for matched samples -----------------------------
 
-cts <- rawCounts[,rownames(phenoData)]
+cts1 <- rawCounts[,rownames(phenoData1)]
+cts2 <- rawCounts[,rownames(phenoData2)]
 
 # Construct DESeq DataSet ------------------------------------------------------
 
-# Factorize diabetes status
-phenoData$Diabetes <- factor(phenoData$Diabetes, levels = c(0,1),
-                             labels = c("Non-Diabetic","Diabetic"))
-
-# Create DataSet
-dds <- DESeqDataSetFromMatrix(countData = cts,
-                              colData = phenoData,
-                              design= ~ Library.Pool + Diabetes)
+dds1 <- DESeqDataSetFromMatrix(countData = cts1,
+                               colData = phenoData1,
+                               design= ~ Library.Pool + Diabetes)
+dds2 <- DESeqDataSetFromMatrix(countData = cts2,
+                               colData = phenoData2,
+                               design= ~ Library.Pool + race)
 
 # Perform DE Analysis ----------------------------------------------------------
 
-dds <- DESeq(dds)
+dds1 <- DESeq(dds1)
+dds2 <- DESeq(dds2)
 
-# Results
+# Results ----------------------------------------------------------------------
 
-resultsNames(dds) # lists the coefficients
-res <- results(dds, name="Diabetes_Diabetic_vs_Non.Diabetic")
+resultsNames(dds1)
+resultsNames(dds2)
+
+res1 <- results(dds1, name="Diabetes")
+res2 <- results(dds2, name="race")
+
+plotMA(res1, ylim=c(-2,2))
+plotMA(res2, ylim=c(-2,2))
+
+plotCounts(dds1, gene=which.min(res1$padj), intgroup="Diabetes")
+plotCounts(dds1, gene=which.min(res1$padj), intgroup="race")
 
 ################################################################################
