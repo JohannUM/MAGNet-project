@@ -135,46 +135,56 @@ gene_info_all <- readRDS("gene_info_all.RDS") # Ensembl Backup Data file
 
 protein_coding <- gene_info_all[gene_info_all$gene_biotype == "protein_coding",]
 num_protein_coding_all <- nrow(protein_coding)
-#print(num_protein_coding_all)
+
+print(num_protein_coding_all)
 
 num_protein_coding <- nrow(protein_coding[rownames(protein_coding) %in% rownames(rawCountData),])
-#print(num_protein_coding)
 
-# BLABLABLA --------------------------------------------------------------------
+print(num_protein_coding)
+
+# Gene filtering ---------------------------------------------------------------
 
 rawCountData <- rawCountData[,colnames(rawCountData) %in% rownames(phenoData)]
 cpmData <- cpm(rawCountData, log = FALSE)
 
 keep_genes <- rowSums(cpmData > 1) >= (ncol(cpmData) / 2)
 num_genes_kept <- sum(keep_genes)
+
 print(num_genes_kept)
 
-filtered_cpm_matrix <- cpmData[keep_genes, ]
-
+cpmMatrix_filtered <- cpmData[keep_genes, ]
 cpmDataMAGNet <- cpmData[rownames(cpmData) %in% rownames(gxDataMAGNet),]
+cpmData_log_filtered <- log2(cpmMatrix_filtered + 1)
+cpmData_log_magnet <- log2(cpmDataMAGNet + 1)
 
-cpmData_log_filtered <- log2(filtered_cpm_matrix + 1)
-cpmData_log_magnet <- log2(magnet_cpm + 1)
+# Plot function ----------------------------------------------------------------
 
 plot_expression_density <- function(cpmData_log) {
+  
   expression_values <- as.vector(cpmData_log)
+  
   density <- ggplot(data.frame(expression_values), aes(x = expression_values)) +
     geom_density(fill = "skyblue", alpha = 0.6) +
-    labs(title = "Expression Value Distribution", x = "Log2(CPM)", y = "Density") +
-    theme_minimal() +
+    labs(title = "Expression Value Distribution", x = "Log2(CPM)", y = "Density") + 
+    theme_minimal() + 
     scale_x_continuous(breaks = scales::pretty_breaks(n = 20))
   
   plot(density)
+  
 }
+
+# Plot expression density ------------------------------------------------------
 
 plot_expression_density(cpmData_log_filtered)
 plot_expression_density(cpmData_log_magnet)
 
 sample_tree <- hclust(dist(t(cpmData_log_filtered)), method = "average")
+
 plot(sample_tree, main = "Sample Clustering to Detect Outliers")
 # there is one outlier in the data namely P01629, maybe remove? But matching?
 
-# correct for confounding factors, maybe add more? Produces negative values because of shifting but is no problem for WGCNA
+# Correct for confounding factors, maybe add more? 
+# Produces negative values because of shifting but is no problem for WGCNA
 design <- model.matrix(~ Library.Pool + gender + Hypertension, data = phenoData1)
 adjusted_log_cpm_filtered <- removeBatchEffect(cpmData_log_filtered, covariates = design[, -1])
 adjusted_log_cpm_magnet <- removeBatchEffect(cpmData_log_magnet, covariates = design[, -1])

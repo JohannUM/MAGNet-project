@@ -15,13 +15,16 @@
 
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
 BiocManager::install("DESeq2")
+BiocManager::install("apeglm")
 if (!requireNamespace("here", quietly = TRUE)) install.packages("here")
+
 
 # Load the necessary libraries -------------------------------------------------
 
 library(BiocManager)
 library(DESeq2)
 library(here)
+library(apeglm)
 
 # Load the data ----------------------------------------------------------------
 
@@ -29,6 +32,10 @@ setwd(here("data"))
 phenoData1 <- read.csv("MAGNet_PhenoData_Matched_Diabetes.csv", row.names = 1)
 phenoData2 <- read.csv("MAGNet_PhenoData_Matched_Ethnicity.csv", row.names = 1)
 rawCounts <- read.csv("MAGNet_RawCounts.csv", row.names = 1)
+
+# Convert ethnicity to factors -------------------------------------------------
+
+phenoData2$race <- as.factor(phenoData2$race)
 
 # Extract gene expression data for matched samples -----------------------------
 
@@ -39,10 +46,10 @@ cts2 <- rawCounts[,rownames(phenoData2)]
 
 dds1 <- DESeqDataSetFromMatrix(countData = cts1,
                                colData = phenoData1,
-                               design= ~ Library.Pool + Diabetes)
+                               design = ~ Library.Pool + Diabetes)
 dds2 <- DESeqDataSetFromMatrix(countData = cts2,
                                colData = phenoData2,
-                               design= ~ Library.Pool + race)
+                               design = ~ Library.Pool + race)
 
 # Perform DE Analysis ----------------------------------------------------------
 
@@ -54,13 +61,23 @@ dds2 <- DESeq(dds2)
 resultsNames(dds1)
 resultsNames(dds2)
 
-res1 <- results(dds1, name="Diabetes")
-res2 <- results(dds2, name="race")
+res1 <- results(dds1, name = "Diabetes_Yes_vs_No")
+res2 <- results(dds2, name = "race_Caucasian_vs_AA")
 
-plotMA(res1, ylim=c(-2,2))
-plotMA(res2, ylim=c(-2,2))
+resLFC1 <- lfcShrink(dds1, coef = "Diabetes_Yes_vs_No", type = "apeglm")
+resLFC2 <- lfcShrink(dds2, coef = "race_Caucasian_vs_AA", type = "apeglm")
 
-plotCounts(dds1, gene=which.min(res1$padj), intgroup="Diabetes")
-plotCounts(dds1, gene=which.min(res1$padj), intgroup="race")
+# Plot results -----------------------------------------------------------------
+
+par(mfrow=c(2,2))
+
+DESeq2::plotMA(res1, ylim = c(-2,2))
+DESeq2::plotMA(resLFC1, ylim = c(-2,2))
+
+DESeq2::plotMA(res2, ylim = c(-2,2))
+DESeq2::plotMA(resLFC2, ylim = c(-2,2))
+
+#plotCounts(dds1, gene = which.min(res1$padj), intgroup = "Diabetes")
+#plotCounts(dds2, gene = which.min(res1$padj), intgroup = "race")
 
 ################################################################################
