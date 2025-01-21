@@ -48,10 +48,13 @@ data_samples <- subset(data_samples, BMI <= 65)
 columns_to_check <- c("Diabetes", "age", "race", "gender", "weight", "height", "Library.Pool", "RIN")
 data_samples <- data_samples[complete.cases(data_samples[, columns_to_check]), ]
 
-
 ################################################################################
 # DATA NORMALIZATION AND TRANSFORMATION                                        #
 ################################################################################
+
+data_raw_counts <- data_raw_counts[, colnames(data_raw_counts) %in% rownames(data_samples)]
+
+# Statistical testing for confounding factors ----------------------------------
 
 traits <- c("age", "gender", "weight", "height", "Hypertension", "Library.Pool")
 test_results <- list()
@@ -69,7 +72,7 @@ for (trait in traits) {
     print(test_results[[trait]])
 }
 
-data_raw_counts <- data_raw_counts[, colnames(data_raw_counts) %in% rownames(data_samples)]
+# Convert to CPM with TMM and filter -------------------------------------------
 
 dge <- DGEList(counts = data_raw_counts)
 
@@ -85,7 +88,24 @@ data_tmm_cpm_log <- data_tmm_cpm_log[keep_genes, ]
 
 data_tmm_cpm_log <- as.data.frame(data_tmm_cpm_log)
 
+# Remove batch effects ---------------------------------------------------------
+
 design <- model.matrix(~ Library.Pool + RIN + Hypertension, data = data_samples)
-log_tmm_cpm_corrected <- removeBatchEffect(data_tmm_cpm_log, covariates = design[, -1])
+data_tmm_cpm_log_corrected <- removeBatchEffect(data_tmm_cpm_log, covariates = design[, -1])
+
+# Check for outliers -----------------------------------------------------------
+
+sample_tree <- hclust(dist(t(data_tmm_cpm_log_corrected)), method = "average")
+plot(sample_tree, main = "Sample Clustering to Detect Outliers")
+
+# based on clustering  seem to be outliers, remove them
+data_samples <- data_samples[!rownames(data_samples) %in% c(""), ]
+data_tmm_cpm_log_corrected <- data_tmm_cpm_log_corrected[, colnames(data_tmm_cpm_log_corrected) %in% rownames(data_samples)]
+
+
+# Save the data ----------------------------------------------------------------
+
+saveRDS(data_tmm_cpm_log_corrected, "DCM/data_DCM_tmm_cpm_log.RDS")
+write.csv(data_samples, file = "DCM/data_samples_DCM_Diabetes.csv")
 
 ################################################################################

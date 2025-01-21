@@ -19,8 +19,8 @@ allowWGCNAThreads()
 setwd(here("data"))
 
 # load the previously filtered and processed data
-data_expression <- readRDS("data_NF_tmm_cpm_log.RDS")
-data_samples <- read.csv("data_samples_NF_Matched_Diabetes.csv", row.names = 1)
+data_expression <- readRDS("NF/data_NF_tmm_cpm_log.RDS")
+data_samples <- read.csv("NF/data_samples_NF_Matched_Diabetes.csv", row.names = 1)
 
 gsg <- goodSamplesGenes(data_expression, verbose = 3)
 print(gsg$allOK)
@@ -76,14 +76,16 @@ abline(h = 0.85, col = "red")
 plot(sft$fitIndices[, 1], sft$fitIndices[, 5], xlab = "Soft Threshold (power)", ylab = "Mean Connectivity", type = "n", main = paste("Mean connectivity"))
 text(sft$fitIndices[, 1], sft$fitIndices[, 5], labels = powers, cex = cex1, col = "red")
 
-# picked the soft threshold 4 because of the scale free topology fit
-soft_power <- 7
+# picked the soft threshold 5 because of the scale free topology fit
+soft_power <- 5
 
 # Network construction and module detection ------------------------------------------------
 adjacency <- adjacency(data_expression, power = soft_power)
 
 TOM <- TOMsimilarity(adjacency)
 diss_TOM <- 1 - TOM
+
+saveRDS(TOM, "TOM_NF.RDS")
 
 gene_tree <- hclust(as.dist(diss_TOM), method = "average")
 
@@ -145,4 +147,4 @@ module_colors <- merged_colors
 module_eigengenes <- merged_ME
 module_labels <- match(module_colors, colors) - 1
 
-save(module_eigengenes, module_labels, module_colors, gene_tree, file = "network_construction.RData")
+save(module_eigengenes, module_labels, module_colors, gene_tree, file = "NF/network_construction_NFv2.RData")

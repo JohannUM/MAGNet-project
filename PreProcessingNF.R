@@ -50,7 +50,7 @@ data_samples <- subset(data_samples, BMI <= 65)
 
 # Remove rows with NA in specified columns -------------------------------------
 
-columns_to_check <- c("Diabetes", "age", "race", "gender", "weight", "height", "Library.Pool", "RIN")
+columns_to_check <- c("Diabetes", "age", "race", "gender", "weight", "height", "Library.Pool", "RIN", "Hypertension")
 data_samples <- data_samples[complete.cases(data_samples[, columns_to_check]), ]
 
 # Convert variables to numeric for matching ------------------------------------
@@ -80,19 +80,19 @@ plot(m.out,
 )
 plot(summary(m.out))
 
-# Save matched phenotype data to .csv file -------------------------------------
-
 m.data <- match_data(m.out)
 
 # Restore Diabetes status
 m.data$Diabetes[which(m.data$Diabetes == 1)] <- "Yes"
 m.data$Diabetes[which(m.data$Diabetes == 0)] <- "No"
 
-data_samples_matched <- as.data.frame(m.data)
+data_samples <- as.data.frame(m.data)
 
 ################################################################################
 # DATA NORMALIZATION AND TRANSFORMATION                                        #
 ################################################################################
+
+data_raw_counts <- data_raw_counts[, colnames(data_raw_counts) %in% rownames(data_samples)]
 
 # Statistical testing for confounding factors ----------------------------------
 
@@ -113,9 +113,9 @@ for (trait in traits) {
     print(test_results[[trait]])
 }
 
-# Convert to CPM with TMM ------------------------------------------------------
+# Hypertension is significantly different between the groups
 
-data_raw_counts <- data_raw_counts[, colnames(data_raw_counts) %in% rownames(data_samples_matched)]
+# Convert to CPM with TMM and filter -------------------------------------------
 
 dge <- DGEList(counts = data_raw_counts)
 
@@ -131,15 +131,23 @@ data_tmm_cpm_log <- data_tmm_cpm_log[keep_genes, ]
 
 data_tmm_cpm_log <- as.data.frame(data_tmm_cpm_log)
 
-sample_tree <- hclust(dist(t(data_tmm_cpm_log)), method = "average")
+# Remove batch effects ---------------------------------------------------------
+
+design <- model.matrix(~ gender + race + Library.Pool + RIN, data = data_samples)
+data_tmm_cpm_log_corrected <- removeBatchEffect(data_tmm_cpm_log, covariates = design[, -1])
+
+# Check for outliers -----------------------------------------------------------
+
+sample_tree <- hclust(dist(t(data_tmm_cpm_log_corrected)), method = "average")
 plot(sample_tree, main = "Sample Clustering to Detect Outliers")
 
-# P01421 P01444 seem to be outliers, remove them
-data_samples_matched <- data_samples_matched[!rownames(data_samples_matched) %in% c("P01421", "P01444"), ]
-data_tmm_cpm_log <- data_tmm_cpm_log[, colnames(data_tmm_cpm_log) %in% rownames(data_samples_matched)]
+# based on clustering P01503 P01562 seem to be outliers, remove them
+data_samples <- data_samples[!rownames(data_samples) %in% c("P01503", "P01562"), ]
+data_tmm_cpm_log_corrected <- data_tmm_cpm_log_corrected[, colnames(data_tmm_cpm_log_corrected) %in% rownames(data_samples)]
 
-saveRDS(data_tmm_cpm_log, "data_NF_tmm_cpm_log.RDS")
-write.csv(data_samples_matched, file = "data_samples_NF_Matched_Diabetes.csv")
+# Save data --------------------------------------------------------------------
 
-# design <- model.matrix(~ Hypertension + Library.Pool + RIN, data = data_samples_matched)
-# data_tmm_cpm_log_adjusted <- removeBatchEffect(as.data.frame(data_tmm_cpm_log), covariates = design[, -1])
+saveRDS(data_tmm_cpm_log_corrected, "NF/data_NF_tmm_cpm_log.RDS")
+write.csv(data_samples, file = "NF/data_samples_NF_Matched_Diabetes.csv")
+
+################################################################################

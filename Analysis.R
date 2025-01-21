@@ -17,14 +17,12 @@ allowWGCNAThreads()
 
 setwd(here("data"))
 
-# load the previously filtered and processed data
-data_expression <- readRDS("data_NF_tmm_cpm_log.RDS")
-data_samples <- read.csv("data_samples_NF_Matched_Diabetes.csv", row.names = 1)
-
+data_expression <- readRDS("NF/data_NF_tmm_cpm_log.RDS")
+data_samples <- read.csv("NF/data_samples_NF_Matched_Diabetes.csv", row.names = 1)
 trait_data <- readRDS("trait_data.RDS")
 
 # load module_eigengenes, module_labels, module_colors and gene_tree
-load(file = "network_construction_NEW.RData")
+load(file = "NF/network_construction_NFv2.RData")
 
 data_expression <- t(data_expression) # have to transpose it here to work with the WGCNA functions
 
@@ -44,7 +42,7 @@ text_matrix <- paste(signif(module_trait_cor, 2), "\n(",
     sep = ""
 )
 dim(text_matrix) <- dim(module_trait_cor)
-par(mar = c(6, 8.5, 3, 1)) # Adjust the right margin to make more space for the heatmap
+# par(mar = c(6, 8.5, 3, 1))
 labeledHeatmap(
     Matrix = module_trait_cor,
     xLabels = names(trait_data),
@@ -57,12 +55,13 @@ labeledHeatmap(
     cex.text = 0.5,
     zlim = c(-1, 1),
     main = paste("Module-trait relationships"),
-    legendSpace = 0.5 # Reduce the legend space
+    legendSpace = 0.5
 )
+
+# Calculate module membership and gene significance --------------------------------------------------
 
 diabetes <- as.data.frame(trait_data$diabetes)
 names(diabates) <- "diabetes"
-# names (colors) of the modules
 mod_names <- substring(names(module_eigengenes), 3)
 gene_module_membership <- as.data.frame(cor(data_expression, module_eigengenes, use = "p"))
 MMP_value <- as.data.frame(corPvalueStudent(as.matrix(gene_module_membership), n_samples))
@@ -73,6 +72,8 @@ gene_trait_significance <- as.data.frame(cor(data_expression, diabetes, use = "p
 GSP_value <- as.data.frame(corPvalueStudent(as.matrix(gene_trait_significance), n_samples))
 names(gene_trait_significance) <- paste("GS.", names(diabetes), sep = "")
 names(GSP_value) <- paste("p.GS.", names(diabetes), sep = "")
+
+# Look at module membership vs. gene significance ------------------------------------------------
 
 module <- "purple"
 column <- match(module, mod_names)
