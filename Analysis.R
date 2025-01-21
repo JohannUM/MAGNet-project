@@ -4,6 +4,7 @@ options(stringsAsFactors = FALSE)
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
 if (!requireNamespace("here", quietly = TRUE)) install.packages()("here")
 if (!requireNamespace("WGCNA", quietly = TRUE)) BiocManager::install("WGCNA")
+if (!requireNamespace("clusterProfiler", quietly = TRUE)) BiocManager::install("clusterProfiler")
 
 # Load the necessary libraries ------------------------------------------------
 
@@ -17,8 +18,12 @@ allowWGCNAThreads()
 setwd(here("data"))
 
 # load the previously filtered and processed data
-data_expression <- readRDS("final/data_expression_filtered_magnet.RDS")
-data_samples <- read.csv("MAGNet_PhenoData_Matched.csv", row.names = 1)
+data_expression <- readRDS("data_tpm_log.RDS")
+data_samples <- read.csv("MAGNet_data_samples_Ethnicity.csv", row.names = 1)
+
+# P01322 C01902 C02660
+data_samples <- data_samples[!rownames(data_samples) %in% c("C01997", "P01629", "C01902", "C02660"), ]
+data_expression <- data_expression[, colnames(data_expression) %in% rownames(data_samples)]
 trait_data <- readRDS("trait_data.RDS")
 
 # load module_eigengenes, module_labels, module_colors and gene_tree
@@ -49,10 +54,52 @@ labeledHeatmap(
     yLabels = names(module_eigengenes),
     ySymbols = names(module_eigengenes),
     colorLabels = FALSE,
-    colors = greenWhiteRed(50),
+    colors = blueWhiteRed(50),
     textMatrix = text_matrix,
     setStdMargins = FALSE,
     cex.text = 0.5,
     zlim = c(-1, 1),
     main = paste("Module-trait relationships")
 )
+
+# Define variable weight containing the weight column of datTrait
+ethnicity <- as.data.frame(trait_data$ethnicity)
+names(ethnicity) <- "ethnicity"
+# names (colors) of the modules
+mod_names <- substring(names(module_eigengenes), 3)
+gene_module_membership <- as.data.frame(cor(data_expression, module_eigengenes, use = "p"))
+MMP_value <- as.data.frame(corPvalueStudent(as.matrix(gene_module_membership), n_samples))
+
+names(gene_module_membership) <- paste("MM", mod_names, sep = "")
+names(MMP_value) <- paste("p.MM", mod_names, sep = "")
+gene_trait_significance <- as.data.frame(cor(data_expression, ethnicity, use = "p"))
+GSP_value <- as.data.frame(corPvalueStudent(as.matrix(gene_trait_significance), n_samples))
+names(gene_trait_significance) <- paste("GS.", names(ethnicity), sep = "")
+names(GSP_value) <- paste("p.GS.", names(ethnicity), sep = "")
+
+module <- "lightyellow"
+column <- match(module, mod_names)
+module_genes <- module_colors == module
+sizeGrWindow(7, 7)
+par(mfrow = c(1, 1))
+verboseScatterplot(abs(gene_module_membership[module_genes, column]), abs(gene_trait_significance[module_genes, 1]),
+    xlab = paste("Module Membership in", module, "module"),
+    ylab = "Gene significance for ethnicity",
+    main = paste("Module membership vs. gene significance\n"),
+    cex.main = 1.2, cex.lab = 1.2, cex.axis = 1.2, col = module
+)
+
+genes_darkred <- rownames(data_expression)[module_genes, ]
+gs_darkred <- gene_trait_significance[module_genes, ]
+# gs_darkred <- gs_darkred[order(gs_darkred[, 1], decreasing = TRUE), , drop = FALSE]
+
+logFC <- res_df$log2FoldChange
+names(logFC) <- rownames(res_df)
+logFC <- sort(logFC, decreasing = TRUE)
+
+### GO gene set enrichment analysis ###
+gsea_go <- gseGO(
+    geneList = logFC,
+    OrgDb = "org.Hs.eg.db"
+)
+df_gsea_go <- as.data.frame(gsea_go)

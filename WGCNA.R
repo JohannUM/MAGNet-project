@@ -4,14 +4,12 @@ options(stringsAsFactors = FALSE)
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
 if (!requireNamespace("here", quietly = TRUE)) install.packages()("here")
 if (!requireNamespace("WGCNA", quietly = TRUE)) BiocManager::install("WGCNA")
-if (!requireNamespace("GEOquery", quietly = TRUE)) BiocManager::install("GEOquery")
 if (!requireNamespace("dplyr", quietly = TRUE)) BiocManager::install("dplyr")
 
 # Load the necessary libraries ------------------------------------------------
 
 library(here)
 library(WGCNA)
-library(GEOquery)
 library(dplyr)
 
 allowWGCNAThreads()
@@ -21,8 +19,8 @@ allowWGCNAThreads()
 setwd(here("data"))
 
 # load the previously filtered and processed data
-data_expression <- readRDS("final/data_expression_filtered_magnet.RDS")
-data_samples <- read.csv("MAGNet_PhenoData_Matched.csv", row.names = 1)
+data_expression <- readRDS("data_NF_tmm_cpm_log.RDS")
+data_samples <- read.csv("data_samples_NF_Matched_Diabetes.csv", row.names = 1)
 
 gsg <- goodSamplesGenes(data_expression, verbose = 3)
 print(gsg$allOK)
@@ -36,7 +34,8 @@ trait_data <- data.frame(
     age = data_samples$age,
     weight = data_samples$weight,
     height = data_samples$height,
-    diabetes = ifelse(is.na(data_samples$Diabetes), NA, ifelse(data_samples$Diabetes == "Yes", 1, 0))
+    diabetes = ifelse(is.na(data_samples$Diabetes), NA, ifelse(data_samples$Diabetes == "Yes", 1, 0)),
+    hypertension = ifelse(is.na(data_samples$Hypertension), NA, ifelse(data_samples$Hypertension == "Yes", 1, 0))
 )
 trait_data <- mutate_all(trait_data, function(x) as.numeric(as.character(x)))
 rownames(trait_data) <- rownames(data_samples)
