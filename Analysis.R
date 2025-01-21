@@ -18,16 +18,13 @@ allowWGCNAThreads()
 setwd(here("data"))
 
 # load the previously filtered and processed data
-data_expression <- readRDS("data_tpm_log.RDS")
-data_samples <- read.csv("MAGNet_data_samples_Ethnicity.csv", row.names = 1)
+data_expression <- readRDS("data_NF_tmm_cpm_log.RDS")
+data_samples <- read.csv("data_samples_NF_Matched_Diabetes.csv", row.names = 1)
 
-# P01322 C01902 C02660
-data_samples <- data_samples[!rownames(data_samples) %in% c("C01997", "P01629", "C01902", "C02660"), ]
-data_expression <- data_expression[, colnames(data_expression) %in% rownames(data_samples)]
 trait_data <- readRDS("trait_data.RDS")
 
 # load module_eigengenes, module_labels, module_colors and gene_tree
-load(file = "network_construction.RData")
+load(file = "network_construction_NEW.RData")
 
 data_expression <- t(data_expression) # have to transpose it here to work with the WGCNA functions
 
@@ -47,7 +44,7 @@ text_matrix <- paste(signif(module_trait_cor, 2), "\n(",
     sep = ""
 )
 dim(text_matrix) <- dim(module_trait_cor)
-par(mar = c(6, 8.5, 3, 3))
+par(mar = c(6, 8.5, 3, 1)) # Adjust the right margin to make more space for the heatmap
 labeledHeatmap(
     Matrix = module_trait_cor,
     xLabels = names(trait_data),
@@ -59,12 +56,12 @@ labeledHeatmap(
     setStdMargins = FALSE,
     cex.text = 0.5,
     zlim = c(-1, 1),
-    main = paste("Module-trait relationships")
+    main = paste("Module-trait relationships"),
+    legendSpace = 0.5 # Reduce the legend space
 )
 
-# Define variable weight containing the weight column of datTrait
-ethnicity <- as.data.frame(trait_data$ethnicity)
-names(ethnicity) <- "ethnicity"
+diabetes <- as.data.frame(trait_data$diabetes)
+names(diabates) <- "diabetes"
 # names (colors) of the modules
 mod_names <- substring(names(module_eigengenes), 3)
 gene_module_membership <- as.data.frame(cor(data_expression, module_eigengenes, use = "p"))
@@ -72,19 +69,19 @@ MMP_value <- as.data.frame(corPvalueStudent(as.matrix(gene_module_membership), n
 
 names(gene_module_membership) <- paste("MM", mod_names, sep = "")
 names(MMP_value) <- paste("p.MM", mod_names, sep = "")
-gene_trait_significance <- as.data.frame(cor(data_expression, ethnicity, use = "p"))
+gene_trait_significance <- as.data.frame(cor(data_expression, diabetes, use = "p"))
 GSP_value <- as.data.frame(corPvalueStudent(as.matrix(gene_trait_significance), n_samples))
-names(gene_trait_significance) <- paste("GS.", names(ethnicity), sep = "")
-names(GSP_value) <- paste("p.GS.", names(ethnicity), sep = "")
+names(gene_trait_significance) <- paste("GS.", names(diabetes), sep = "")
+names(GSP_value) <- paste("p.GS.", names(diabetes), sep = "")
 
-module <- "lightyellow"
+module <- "purple"
 column <- match(module, mod_names)
 module_genes <- module_colors == module
 sizeGrWindow(7, 7)
 par(mfrow = c(1, 1))
 verboseScatterplot(abs(gene_module_membership[module_genes, column]), abs(gene_trait_significance[module_genes, 1]),
     xlab = paste("Module Membership in", module, "module"),
-    ylab = "Gene significance for ethnicity",
+    ylab = "Gene significance for Diabetes",
     main = paste("Module membership vs. gene significance\n"),
     cex.main = 1.2, cex.lab = 1.2, cex.axis = 1.2, col = module
 )

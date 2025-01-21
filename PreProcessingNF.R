@@ -30,9 +30,6 @@ library(ggplot2)
 setwd(here("data"))
 data_samples <- read.csv("MAGNet_PhenoData.csv", row.names = 1)
 data_raw_counts <- read.csv("MAGNet_RawCounts.csv", as.is = T, row.names = 1)
-data_expression_magnet <- readRDS("CPMS_SVA_corrected.RDS")
-gene_info_all <- readRDS("gene_info_all.RDS")
-gene_lengths <- readRDS("gene_lengths.RDS")
 
 ################################################################################
 # PREPROCESSING data_samples                                                      #
@@ -116,7 +113,7 @@ for (trait in traits) {
     print(test_results[[trait]])
 }
 
-# Get gene lengths -------------------------------------------------------------
+# Convert to CPM with TMM ------------------------------------------------------
 
 data_raw_counts <- data_raw_counts[, colnames(data_raw_counts) %in% rownames(data_samples_matched)]
 
