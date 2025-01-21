@@ -43,6 +43,10 @@ phenoData <- subset(phenoData, etiology == "DCM")
 phenoData$BMI <- phenoData$weight / ((phenoData$height/100)^2)
 phenoData <- subset(phenoData, BMI <= 65)
 
+# Save file --------------------------------------------------------------------
+
+write.csv(phenoData, file = "MAGNet_PhenoData_DCM.csv")
+
 ################################################################################
 # SAMPLE MATCHING                                                              #
 ################################################################################
