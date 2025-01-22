@@ -22,8 +22,6 @@ if (!requireNamespace("EnhancedVolcano", quietly = TRUE)) BiocManager::install('
 if (!requireNamespace("here", quietly = TRUE)) install.packages("here")
 if (!requireNamespace("edgeR", quietly = TRUE)) install.packages("edgeR")
 
-
-
 # Load the necessary libraries -------------------------------------------------
 
 library(BiocManager)
@@ -34,101 +32,100 @@ library(Glimma)
 library(edgeR)
 library(clusterProfiler)
 library(EnhancedVolcano)
+library(org.Hs.eg.db)
 
 # Load the data ----------------------------------------------------------------
 
 setwd(here("data"))
-phenoData0 <- read.csv("MAGNet_PhenoData_DCM.csv", row.names = 1)
-phenoData1 <- read.csv("MAGNet_PhenoData_Matched_Diabetes.csv", row.names = 1)
-phenoData2 <- read.csv("MAGNet_PhenoData_Matched_Ethnicity.csv", row.names = 1)
+phenoDataNF <- read.csv("NF/data_samples_NF_Matched_Diabetes.csv", row.names = 1)
+phenoDataDCM <- read.csv("DCM/data_samples_DCM_Diabetes.csv", row.names = 1)
 rawCounts <- read.csv("MAGNet_RawCounts.csv", row.names = 1)
 
-# Convert ethnicity to factors -------------------------------------------------
+# Extract gene expression data for sample IDs ----------------------------------
 
-phenoData2$race <- as.factor(phenoData2$race)
-
-# Extract gene expression data for matched samples -----------------------------
-
-cts0 <- rawCounts[,rownames(phenoData0)]
-cts1 <- rawCounts[,rownames(phenoData1)]
+ctsNF <- rawCounts[,rownames(phenoDataNF)]
+ctsDCM <- rawCounts[,rownames(phenoDataDCM)]
 
 # Construct DESeq DataSet ------------------------------------------------------
 
-dds0 <- DESeqDataSetFromMatrix(countData = cts0,
-                               colData = phenoData0,
-                               design = ~ Library.Pool + Diabetes)
+ddsNF <- DESeqDataSetFromMatrix(countData = ctsNF,
+                               colData = phenoDataNF,
+                               design = ~ Library.Pool + RIN + Diabetes)
 
-dds1 <- DESeqDataSetFromMatrix(countData = cts1,
-                               colData = phenoData1,
-                               design = ~ Library.Pool + Diabetes)
+ddsDCM <- DESeqDataSetFromMatrix(countData = ctsDCM,
+                               colData = phenoDataDCM,
+                               design = ~ Library.Pool + RIN + Diabetes)
 
 
 # Perform DE Analysis ----------------------------------------------------------
 
-dds0 <- DESeq(dds0, quiet = TRUE)
-dds1 <- DESeq(dds1, quiet = TRUE)
+ddsNF <- DESeq(ddsNF, quiet = TRUE)
+ddsDCM <- DESeq(ddsDCM, quiet = TRUE)
 
 # Results ----------------------------------------------------------------------
 
-resultsNames(dds0)
-resultsNames(dds1)
+resultsNames(ddsNF)
+resultsNames(ddsDCM)
 
-res0 <- results(dds0, name = "Diabetes_Yes_vs_No")
-res1 <- results(dds1, name = "Diabetes_Yes_vs_No")
+resNF <- results(ddsNF, name = "Diabetes_Yes_vs_No")
+resDCM <- results(ddsDCM, name = "Diabetes_Yes_vs_No")
 
-resLFC0 <- lfcShrink(dds0, coef = "Diabetes_Yes_vs_No", type = "apeglm")
-resLFC1 <- lfcShrink(dds1, coef = "Diabetes_Yes_vs_No", type = "apeglm")
+resLFC_NF <- lfcShrink(ddsNF, coef = "Diabetes_Yes_vs_No", type = "apeglm")
+resLFC_DCM <- lfcShrink(ddsDCM, coef = "Diabetes_Yes_vs_No", type = "apeglm")
 
 # Plot results -----------------------------------------------------------------
 
 par(mfrow=c(2,2))
 
-DESeq2::plotMA(res0, ylim = c(-2,2))
-DESeq2::plotMA(resLFC0, ylim = c(-2,2))
+DESeq2::plotMA(resNF, ylim = c(-2,2))
+DESeq2::plotMA(resLFC_NF, ylim = c(-2,2))
 
-DESeq2::plotMA(res1, ylim = c(-2,2))
-DESeq2::plotMA(resLFC1, ylim = c(-2,2))
+DESeq2::plotMA(resDCM, ylim = c(-2,2))
+DESeq2::plotMA(resLFC_DCM, ylim = c(-2,2))
 
-EnhancedVolcano(res0,
-                lab = rownames(res0),
+EnhancedVolcano(resNF,
+                lab = rownames(resNF),
                 x = 'log2FoldChange',
                 y = 'pvalue')
 
-# Gene set enrichment analysis ALL ---------------------------------------------
+EnhancedVolcano(resDCM,
+                lab = rownames(resDCM),
+                x = 'log2FoldChange',
+                y = 'pvalue')
 
-logFC0 <- res0$log2FoldChange
-names(logFC0) <- rownames(res0)
-logFC0 <- sort(logFC0, decreasing = TRUE)
+# Gene set enrichment analysis NF ----------------------------------------------
 
-# Up-regulated genes
+resNF <- resNF[order(-resNF$log2FoldChange),]
+gene_list_NF <- resNF$log2FoldChange
+names(gene_list_NF) <- rownames(resNF)
+gene_list_NF <- gene_list_NF[!is.na(gene_list_NF)]
 
-upreg0 <- rownames(res0)[res0$pvalue < 0.05 & res0$log2FoldChange > 0]
-
-# GO gene set enrichment analysis
-gsea_go0 <- enrichGO(upreg0, 
+gsea_go_NF <- gseGO(gene_list_NF, 
                      OrgDb = org.Hs.eg.db, 
                      keyType = "ENSEMBL", 
                      ont = "BP", 
-                     universe = rownames(res0))
+                     eps = 1e-300)
 
-df_gsea_go0 <- as.data.frame(gsea_go0)
+df_gsea_go_NF <- as.data.frame(gsea_go_NF)
 
-# Gene set enrichment analysis Diabetes ----------------------------------------
+# Gene set enrichment analysis DCM ---------------------------------------------
 
-logFC1 <- res1$log2FoldChange
-names(logFC1) <- rownames(res1)
-logFC1 <- sort(logFC1, decreasing = TRUE)
+resDCM <- resDCM[order(-resDCM$log2FoldChange),]
+gene_list_DCM <- resDCM$log2FoldChange
+names(gene_list_DCM) <- rownames(resDCM)
+gene_list_DCM <- gene_list_DCM[!is.na(gene_list_DCM)]
 
-# Up-regulated genes
-upreg1 <- rownames(res1)[res1$pvalue < 0.05 & res1$log2FoldChange > 0]
+gsea_go_DCM <- gseGO(gene_list_DCM, 
+                    OrgDb = org.Hs.eg.db, 
+                    keyType = "ENSEMBL", 
+                    ont = "BP", 
+                    eps = 1e-300)
 
-# GO gene set enrichment analysis
-gsea_go1 <- enrichGO(upreg1, 
-                 OrgDb = org.Hs.eg.db, 
-                 keyType = "ENSEMBL", 
-                 ont = "BP", 
-                 universe = rownames(res1))
+df_gsea_go_DCM <- as.data.frame(gsea_go_DCM)
 
-df_gsea_go1 <- as.data.frame(gsea_go1)
+# Dot Plot ---------------------------------------------------------------------
+
+dotplot(gsea_go_DCM, showCategory = 25, title = "GSE Analysis DCM")
+dotplot(gsea_go_NF, showCategory = 20, title = "GSE Analysis NF")
 
 ################################################################################
