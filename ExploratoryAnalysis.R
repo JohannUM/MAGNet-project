@@ -36,17 +36,16 @@ library(pcaMethods)
 # Load the data ----------------------------------------------------------------
 
 setwd(here("data"))
-phenoData0 <- read.csv("MAGNet_PhenoData_DCM.csv", row.names = 1)
+phenoData0 <- read.csv("DCM/data_samples_DCM_Diabetes.csv", row.names = 1)
 phenoData1 <- read.csv("MAGNet_PhenoData_Matched_Diabetes.csv", row.names = 1)
 phenoData2 <- read.csv("MAGNet_PhenoData_Matched_Ethnicity.csv", row.names = 1)
-gxData <- readRDS("CPMS_SVA_corrected.RDS")
+gxData <- readRDS("DCM/data_DCM_tmm_cpm_log.RDS")
 
 # Extract gene expression data for matched samples -----------------------------
 
 gxData0 <- gxData[,rownames(phenoData0)]
 gxData1 <- gxData[,rownames(phenoData1)]
 gxData2 <- gxData[,rownames(phenoData2)]
-
 
 # Function ---------------------------------------------------------------------
 
@@ -90,3 +89,21 @@ exploreData <- function (phenoData, gxData, strat) {
 exploreData(phenoData0,gxData0,"DCM")
 exploreData(phenoData1,gxData1,"diabetes")
 exploreData(phenoData2,gxData2,"race")
+
+
+pcaRes <- pca(t(gxData0), nPcs = 10)
+plotData <- cbind(data.frame(pcaRes@scores), phenoData0)
+plot <- ggplot(plotData, aes(x = PC1, y = PC2)) + geom_point(aes(color = Diabetes, shape = gender, size = age))
+plot
+plot <- ggplot(plotData, aes(x = PC1, y = PC2)) + geom_point(aes(color = Library.Pool, shape = Diabetes))
+plot
+
+# Numeric Plots ----------------------------------------------------------------
+
+numeric_data <- phenoData0[, sapply(phenoData0, is.numeric)]
+
+# Check structure of numeric data
+str(numeric_data)
+
+# Boxplot for all numeric columns
+boxplot(numeric_data, main = "Boxplot for Numeric Variables", las = 2)
