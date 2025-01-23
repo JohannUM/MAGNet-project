@@ -36,57 +36,70 @@ library(pcaMethods)
 # Load the data ----------------------------------------------------------------
 
 setwd(here("data"))
-phenoData0 <- read.csv("MAGNet_PhenoData_DCM.csv", row.names = 1)
-phenoData1 <- read.csv("MAGNet_PhenoData_Matched_Diabetes.csv", row.names = 1)
-phenoData2 <- read.csv("MAGNet_PhenoData_Matched_Ethnicity.csv", row.names = 1)
-gxData <- readRDS("CPMS_SVA_corrected.RDS")
+phenoData0 <- read.csv("DCM/data_samples_DCM_Diabetes.csv", row.names = 1)
+phenoData1 <- read.csv("NF/data_samples_NF_Matched_Diabetes.csv", row.names = 1)
+gxData0 <- readRDS("DCM/data_DCM_tmm_cpm_log.RDS")
+gxData1 <- readRDS("NF/data_NF_tmm_cpm_log.RDS")
 
-# Extract gene expression data for matched samples -----------------------------
+# # Function ---------------------------------------------------------------------
+# 
+# exploreData <- function (phenoData, gxData, strat) {
+#   
+#   # Set labels for each characteristic and factorize race and diabetes status
+#   label(phenoData$age)     <- "Age"
+#   label(phenoData$height)  <- "Height"
+#   label(phenoData$weight)  <- "Weight"
+#   label(phenoData$race)    <- "Ethnicity"
+#   phenoData$race <- factor(phenoData$race, levels = c("AA","Caucasian"),
+#                             labels = c("African American","Caucasian"))
+#   phenoData$Diabetes <- factor(phenoData$Diabetes, levels = c("No","Yes"),
+#                                 labels = c("NonDiabetic","Diabetic"))
+#   
+#   # Print a table
+#   table <- switch(strat, 
+#          "diabetes" = table1(~ age + height + weight + race + Hypertension | Diabetes, dat = phenoData),
+#          "race" = table1(~ age + height + weight + Diabetes + Hypertension | race, dat = phenoData),
+#          "DCM" = table1(~ age + height + weight + Diabetes + race + Hypertension | etiology, dat = phenoData)
+#          )
+#   table
+#   
+#   # Perform PCA on the gene expression data for 10 principal components
+#   pcaRes <- pca(t(gxData), nPcs = 10)
+# 
+#   # Plot PCA figure showing gender, age, and diabetes 
+#   plotData <- cbind(data.frame(pcaRes@scores), phenoData)
+#   
+#   plot <- switch(strat, 
+#          "diabetes" = ggplot(plotData, aes(x = PC1, y = PC2)) + geom_point(aes(color = Diabetes, shape = gender, size = age)),
+#          "race" = ggplot(plotData, aes(x = PC1, y = PC2)) + geom_point(aes(color = race, shape = gender, size = age)),
+#          "DCM" = ggplot(plotData, aes(x = PC1, y = PC2)) + geom_point(aes(color = Diabetes, shape = gender, size = age))
+#          )
+#   plot
+#   
+# }
+# 
+# # Test function
+# 
+# exploreData(phenoData0,gxData0,"DCM")
+# exploreData(phenoData1,gxData1,"diabetes")
+# exploreData(phenoData2,gxData2,"race")
+# 
+# 
+# pcaRes <- pca(t(gxData0), nPcs = 10)
+# plotData <- cbind(data.frame(pcaRes@scores), phenoData0)
+# plot <- ggplot(plotData, aes(x = PC1, y = PC2)) + geom_point(aes(color = Diabetes, shape = gender, size = age))
+# plot
+# plot <- ggplot(plotData, aes(x = PC1, y = PC2)) + geom_point(aes(color = Library.Pool, shape = Diabetes))
+# plot
 
-gxData0 <- gxData[,rownames(phenoData0)]
-gxData1 <- gxData[,rownames(phenoData1)]
-gxData2 <- gxData[,rownames(phenoData2)]
+# Numeric Plots ----------------------------------------------------------------
 
+par(mfrow=c(1,2))
 
-# Function ---------------------------------------------------------------------
+numeric_data <- phenoData0[, sapply(phenoData0, is.numeric)]
+boxplot(numeric_data, main = "DCM", las = 2)
 
-exploreData <- function (phenoData, gxData, strat) {
-  
-  # Set labels for each characteristic and factorize race and diabetes status
-  label(phenoData$age)     <- "Age"
-  label(phenoData$height)  <- "Height"
-  label(phenoData$weight)  <- "Weight"
-  label(phenoData$race)    <- "Ethnicity"
-  phenoData$race <- factor(phenoData$race, levels = c("AA","Caucasian"),
-                            labels = c("African American","Caucasian"))
-  phenoData$Diabetes <- factor(phenoData$Diabetes, levels = c("No","Yes"),
-                                labels = c("NonDiabetic","Diabetic"))
-  
-  # Print a table
-  table <- switch(strat, 
-         "diabetes" = table1(~ age + height + weight + race + Hypertension | Diabetes, dat = phenoData),
-         "race" = table1(~ age + height + weight + Diabetes + Hypertension | race, dat = phenoData),
-         "DCM" = table1(~ age + height + weight + Diabetes + race + Hypertension | etiology, dat = phenoData)
-         )
-  table
-  
-  # Perform PCA on the gene expression data for 10 principal components
-  pcaRes <- pca(t(gxData), nPcs = 10)
+numeric_data <- phenoData1[, sapply(phenoData1, is.numeric)]
+boxplot(numeric_data, main = "NF", las = 2)
 
-  # Plot PCA figure showing gender, age, and diabetes 
-  plotData <- cbind(data.frame(pcaRes@scores), phenoData)
-  
-  plot <- switch(strat, 
-         "diabetes" = ggplot(plotData, aes(x = PC1, y = PC2)) + geom_point(aes(color = Diabetes, shape = gender, size = age)),
-         "race" = ggplot(plotData, aes(x = PC1, y = PC2)) + geom_point(aes(color = race, shape = gender, size = age)),
-         "DCM" = ggplot(plotData, aes(x = PC1, y = PC2)) + geom_point(aes(color = Diabetes, shape = gender, size = age))
-         )
-  plot
-  
-}
-
-# Test function
-
-exploreData(phenoData0,gxData0,"DCM")
-exploreData(phenoData1,gxData1,"diabetes")
-exploreData(phenoData2,gxData2,"race")
+mtext("Boxplot Numeric Variables", side = 3, line = -1.2, outer = TRUE, cex = 1.5, font=2)
