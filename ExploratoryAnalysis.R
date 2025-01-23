@@ -36,9 +36,8 @@ library(pcaMethods)
 # Load the data ----------------------------------------------------------------
 
 setwd(here("data"))
-phenoData0 <- read.csv("DCM/data_samples_DCM_Diabetes.csv", row.names = 1)
-phenoData1 <- read.csv("MAGNet_PhenoData_Matched_Diabetes.csv", row.names = 1)
-phenoData2 <- read.csv("MAGNet_PhenoData_Matched_Ethnicity.csv", row.names = 1)
+phenoData0 <- read.csv("DCM/data_samples_DCM_Diabetes.csv.csv", row.names = 1)
+phenoData1 <- read.csv("NF/data_samples_NF_Matched_Diabetes.csv", row.names = 1)
 gxData <- readRDS("DCM/data_DCM_tmm_cpm_log.RDS")
 
 # Extract gene expression data for matched samples -----------------------------
@@ -101,9 +100,7 @@ plot
 # Numeric Plots ----------------------------------------------------------------
 
 numeric_data <- phenoData0[, sapply(phenoData0, is.numeric)]
+boxplot(numeric_data, main = "DCM", las = 2)
 
-# Check structure of numeric data
-str(numeric_data)
-
-# Boxplot for all numeric columns
-boxplot(numeric_data, main = "Boxplot for Numeric Variables", las = 2)
+numeric_data <- phenoData1[, sapply(phenoData1, is.numeric)]
+boxplot(numeric_data, main = "NF", las = 2)
