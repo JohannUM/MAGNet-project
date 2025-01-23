@@ -4,14 +4,12 @@ options(stringsAsFactors = FALSE)
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
 if (!requireNamespace("here", quietly = TRUE)) install.packages()("here")
 if (!requireNamespace("WGCNA", quietly = TRUE)) BiocManager::install("WGCNA")
-if (!requireNamespace("GEOquery", quietly = TRUE)) BiocManager::install("GEOquery")
 if (!requireNamespace("dplyr", quietly = TRUE)) BiocManager::install("dplyr")
 
 # Load the necessary libraries ------------------------------------------------
 
 library(here)
 library(WGCNA)
-library(GEOquery)
 library(dplyr)
 
 allowWGCNAThreads()
@@ -20,9 +18,12 @@ allowWGCNAThreads()
 
 setwd(here("data"))
 
+# set the etiology to NF or DCM
+etiology <- "DCM"
+
 # load the previously filtered and processed data
-data_expression <- readRDS("data_expression_filtered.RDS")
-data_samples <- readRDS("data_samples_filtered.RDS")
+data_expression <- readRDS(paste(etiology, "/data_", etiology, "_tmm_cpm_log.RDS", sep = ""))
+data_samples <- read.csv(paste(etiology, "/data_samples_", etiology, "_Diabetes.csv", sep = ""), row.names = 1)
 
 gsg <- goodSamplesGenes(data_expression, verbose = 3)
 print(gsg$allOK)
@@ -36,7 +37,9 @@ trait_data <- data.frame(
     age = data_samples$age,
     weight = data_samples$weight,
     height = data_samples$height,
-    diabetes = ifelse(is.na(data_samples$Diabetes), NA, ifelse(data_samples$Diabetes == "Yes", 1, 0))
+    diabetes = ifelse(is.na(data_samples$Diabetes), NA, ifelse(data_samples$Diabetes == "Yes", 1, 0)),
+    hypertension = ifelse(is.na(data_samples$Hypertension), NA, ifelse(data_samples$Hypertension == "Yes", 1, 0)),
+    afib = ifelse(is.na(data_samples$afib), NA, ifelse(data_samples$afib == "Yes", 1, 0))
 )
 trait_data <- mutate_all(trait_data, function(x) as.numeric(as.character(x)))
 rownames(trait_data) <- rownames(data_samples)
@@ -46,7 +49,7 @@ collectGarbage()
 if (!all(rownames(trait_data) == rownames(data_expression))) {
     print("The rownames of trait_data and data_expression do not match.")
 }
-saveRDS(trait_data, "trait_data.RDS")
+saveRDS(trait_data, paste(etiology, "/trait_data_", etiology, ".RDS", sep = ""))
 
 sample_tree <- hclust(dist(data_expression), method = "average")
 trait_colors <- numbers2colors(trait_data, signed = FALSE)
@@ -73,7 +76,7 @@ cex1 <- 0.9
 
 plot(sft$fitIndices[, 1], -sign(sft$fitIndices[, 3]) * sft$fitIndices[, 2], xlab = "Soft Threshold (power)", ylab = "Scale Free Topology Model Fit,signed R^2", type = "n", main = paste("Scale independence"))
 text(sft$fitIndices[, 1], -sign(sft$fitIndices[, 3]) * sft$fitIndices[, 2], labels = powers, cex = cex1, col = "red")
-abline(h = 0.85, col = "red")
+abline(h = 0.8, col = "red")
 plot(sft$fitIndices[, 1], sft$fitIndices[, 5], xlab = "Soft Threshold (power)", ylab = "Mean Connectivity", type = "n", main = paste("Mean connectivity"))
 text(sft$fitIndices[, 1], sft$fitIndices[, 5], labels = powers, cex = cex1, col = "red")
 
@@ -85,6 +88,8 @@ adjacency <- adjacency(data_expression, power = soft_power)
 
 TOM <- TOMsimilarity(adjacency)
 diss_TOM <- 1 - TOM
+
+saveRDS(TOM, paste(etiology, "/TOM_", etiology, ".RDS", sep = ""))
 
 gene_tree <- hclust(as.dist(diss_TOM), method = "average")
 
@@ -146,4 +151,4 @@ module_colors <- merged_colors
 module_eigengenes <- merged_ME
 module_labels <- match(module_colors, colors) - 1
 
-save(module_eigengenes, module_labels, module_colors, gene_tree, file = "network-construction.RData")
+save(module_eigengenes, module_labels, module_colors, gene_tree, file = paste(etiology, "/network_construction_", etiology, ".RData", sep = ""))
