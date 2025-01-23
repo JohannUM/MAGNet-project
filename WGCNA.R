@@ -18,9 +18,12 @@ allowWGCNAThreads()
 
 setwd(here("data"))
 
+# set the etiology to NF or DCM
+etiology <- "DCM"
+
 # load the previously filtered and processed data
-data_expression <- readRDS("DCM/data_DCM_tmm_cpm_log.RDS")
-data_samples <- read.csv("DCM/data_samples_DCM_Diabetes.csv", row.names = 1)
+data_expression <- readRDS(paste(etiology, "/data_", etiology, "_tmm_cpm_log.RDS", sep = ""))
+data_samples <- read.csv(paste(etiology, "/data_samples_", etiology, "_Diabetes.csv", sep = ""), row.names = 1)
 
 gsg <- goodSamplesGenes(data_expression, verbose = 3)
 print(gsg$allOK)
@@ -35,7 +38,8 @@ trait_data <- data.frame(
     weight = data_samples$weight,
     height = data_samples$height,
     diabetes = ifelse(is.na(data_samples$Diabetes), NA, ifelse(data_samples$Diabetes == "Yes", 1, 0)),
-    hypertension = ifelse(is.na(data_samples$Hypertension), NA, ifelse(data_samples$Hypertension == "Yes", 1, 0))
+    hypertension = ifelse(is.na(data_samples$Hypertension), NA, ifelse(data_samples$Hypertension == "Yes", 1, 0)),
+    afib = ifelse(is.na(data_samples$afib), NA, ifelse(data_samples$afib == "Yes", 1, 0))
 )
 trait_data <- mutate_all(trait_data, function(x) as.numeric(as.character(x)))
 rownames(trait_data) <- rownames(data_samples)
@@ -45,7 +49,7 @@ collectGarbage()
 if (!all(rownames(trait_data) == rownames(data_expression))) {
     print("The rownames of trait_data and data_expression do not match.")
 }
-saveRDS(trait_data, "DCM/trait_data_DCM.RDS")
+saveRDS(trait_data, paste(etiology, "/trait_data_", etiology, ".RDS", sep = ""))
 
 sample_tree <- hclust(dist(data_expression), method = "average")
 trait_colors <- numbers2colors(trait_data, signed = FALSE)
@@ -72,12 +76,12 @@ cex1 <- 0.9
 
 plot(sft$fitIndices[, 1], -sign(sft$fitIndices[, 3]) * sft$fitIndices[, 2], xlab = "Soft Threshold (power)", ylab = "Scale Free Topology Model Fit,signed R^2", type = "n", main = paste("Scale independence"))
 text(sft$fitIndices[, 1], -sign(sft$fitIndices[, 3]) * sft$fitIndices[, 2], labels = powers, cex = cex1, col = "red")
-abline(h = 0.75, col = "red")
+abline(h = 0.8, col = "red")
 plot(sft$fitIndices[, 1], sft$fitIndices[, 5], xlab = "Soft Threshold (power)", ylab = "Mean Connectivity", type = "n", main = paste("Mean connectivity"))
 text(sft$fitIndices[, 1], sft$fitIndices[, 5], labels = powers, cex = cex1, col = "red")
 
-# picked the soft threshold 5 because of the scale free topology fit
-soft_power <- 6
+# picked the soft threshold 4 because of the scale free topology fit
+soft_power <- 4
 
 # Network construction and module detection ------------------------------------------------
 adjacency <- adjacency(data_expression, power = soft_power)
@@ -85,7 +89,7 @@ adjacency <- adjacency(data_expression, power = soft_power)
 TOM <- TOMsimilarity(adjacency)
 diss_TOM <- 1 - TOM
 
-# saveRDS(TOM, "TOM_NF.RDS")
+saveRDS(TOM, paste(etiology, "/TOM_", etiology, ".RDS", sep = ""))
 
 gene_tree <- hclust(as.dist(diss_TOM), method = "average")
 
@@ -147,4 +151,4 @@ module_colors <- merged_colors
 module_eigengenes <- merged_ME
 module_labels <- match(module_colors, colors) - 1
 
-save(module_eigengenes, module_labels, module_colors, gene_tree, file = "DCM/network_construction_DCM.RData")
+save(module_eigengenes, module_labels, module_colors, gene_tree, file = paste(etiology, "/network_construction_", etiology, ".RData", sep = ""))

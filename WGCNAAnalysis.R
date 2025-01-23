@@ -21,14 +21,15 @@ allowWGCNAThreads()
 
 setwd(here("data"))
 
-data_expression <- readRDS("DCM/data_DCM_tmm_cpm_log.RDS")
-data_samples <- read.csv("DCM/data_samples_DCM_Diabetes.csv", row.names = 1)
-trait_data <- readRDS("DCM/trait_data_DCM.RDS")
-# Count the number of samples with Diabetes status "Yes"
-num_diabetic_yes <- sum(data_samples$Diabetes == "Yes")
-print(paste("Number of samples with Diabetes 'Yes':", num_diabetic_yes))
+# set the etiology to NF or DCM
+etiology <- "DCM"
+
+data_expression <- readRDS(paste(etiology, "/data_", etiology, "_tmm_cpm_log.RDS", sep = ""))
+data_samples <- read.csv(paste(etiology, "/data_samples_", etiology, "_Diabetes.csv", sep = ""), row.names = 1)
+trait_data <- readRDS(paste(etiology, "/trait_data_", etiology, ".RDS", sep = ""))
+
 # load module_eigengenes, module_labels, module_colors and gene_tree
-load(file = "DCM/network_construction_DCM.RData")
+load(file = paste(etiology, "/network_construction_", etiology, ".RData", sep = ""))
 
 data_expression <- t(data_expression) # have to transpose it here to work with the WGCNA functions
 
@@ -82,7 +83,8 @@ names(GSP_value) <- paste("p.GS.", names(diabetes), sep = "")
 
 # Look at module membership vs. gene significance ------------------------------------------------
 
-module <- "lightgreen"
+# set the module of interest
+module <- "tan"
 column <- match(module, mod_names)
 module_genes <- module_colors == module
 sizeGrWindow(7, 7)
@@ -91,13 +93,20 @@ verboseScatterplot(abs(gene_module_membership[module_genes, column]), abs(gene_t
     xlab = paste("Module Membership in", module, "module"),
     ylab = "Gene significance for Diabetes",
     main = paste("Module membership vs. gene significance\n"),
-    cex.main = 1.2, cex.lab = 1.2, cex.axis = 1.2, col = "darkgreen"
+    cex.main = 1.2, cex.lab = 1.2, cex.axis = 1.2, col = module
 )
 
-genes_paleturquoise <- colnames(data_expression)[module_genes]
+# get the gene significance and module membership for the module of interest
+gene_significance_membership <- data.frame(
+    GeneSignificance = abs(gene_trait_significance[module_genes, 1]),
+    ModuleMembership = abs(gene_module_membership[module_genes, column])
+)
+rownames(gene_significance_membership) <- rownames(gene_module_membership[module_genes, ])
+
+genes_module <- rownames(gene_significance_membership)
 
 goResults <- enrichGO(
-    gene = genes_paleturquoise,
+    gene = genes_module,
     OrgDb = org.Hs.eg.db,
     keyType = "ENSEMBL",
     ont = "BP",

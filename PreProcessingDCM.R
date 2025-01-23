@@ -102,7 +102,7 @@ data_tmm_cpm_log <- as.data.frame(data_tmm_cpm_log)
 
 # Remove batch effects ---------------------------------------------------------
 
-design <- model.matrix(~ Library.Pool + RIN, data = data_samples)
+design <- model.matrix(~ Library.Pool + RIN + TIN.median, data = data_samples)
 data_tmm_cpm_log_corrected <- removeBatchEffect(data_tmm_cpm_log, covariates = design[, -1])
 
 # Check for outliers -----------------------------------------------------------
@@ -110,8 +110,8 @@ data_tmm_cpm_log_corrected <- removeBatchEffect(data_tmm_cpm_log, covariates = d
 sample_tree <- hclust(dist(t(data_tmm_cpm_log_corrected)), method = "average")
 plot(sample_tree, main = "Sample Clustering to Detect Outliers")
 
-# based on clustering C01902 P01071 P01596 seem to be outliers, remove them
-data_samples <- data_samples[!rownames(data_samples) %in% c("C01902", "P01071", "P01596"), ]
+# based on clustering C01902 P01164 C02660 C01997 P01629 seem to be outliers, remove them
+data_samples <- data_samples[!rownames(data_samples) %in% c("C01902", "P01164", "C02660", "C01997", "P01629"), ]
 data_tmm_cpm_log_corrected <- data_tmm_cpm_log_corrected[, colnames(data_tmm_cpm_log_corrected) %in% rownames(data_samples)]
 
 # Save the data ----------------------------------------------------------------
