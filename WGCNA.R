@@ -19,8 +19,8 @@ allowWGCNAThreads()
 setwd(here("data"))
 
 # load the previously filtered and processed data
-data_expression <- readRDS("NF/data_NF_tmm_cpm_log.RDS")
-data_samples <- read.csv("NF/data_samples_NF_Matched_Diabetes.csv", row.names = 1)
+data_expression <- readRDS("DCM/data_DCM_tmm_cpm_log.RDS")
+data_samples <- read.csv("DCM/data_samples_DCM_Diabetes.csv", row.names = 1)
 
 gsg <- goodSamplesGenes(data_expression, verbose = 3)
 print(gsg$allOK)
@@ -45,7 +45,7 @@ collectGarbage()
 if (!all(rownames(trait_data) == rownames(data_expression))) {
     print("The rownames of trait_data and data_expression do not match.")
 }
-saveRDS(trait_data, "trait_data.RDS")
+saveRDS(trait_data, "DCM/trait_data_DCM.RDS")
 
 sample_tree <- hclust(dist(data_expression), method = "average")
 trait_colors <- numbers2colors(trait_data, signed = FALSE)
@@ -72,12 +72,12 @@ cex1 <- 0.9
 
 plot(sft$fitIndices[, 1], -sign(sft$fitIndices[, 3]) * sft$fitIndices[, 2], xlab = "Soft Threshold (power)", ylab = "Scale Free Topology Model Fit,signed R^2", type = "n", main = paste("Scale independence"))
 text(sft$fitIndices[, 1], -sign(sft$fitIndices[, 3]) * sft$fitIndices[, 2], labels = powers, cex = cex1, col = "red")
-abline(h = 0.85, col = "red")
+abline(h = 0.75, col = "red")
 plot(sft$fitIndices[, 1], sft$fitIndices[, 5], xlab = "Soft Threshold (power)", ylab = "Mean Connectivity", type = "n", main = paste("Mean connectivity"))
 text(sft$fitIndices[, 1], sft$fitIndices[, 5], labels = powers, cex = cex1, col = "red")
 
 # picked the soft threshold 5 because of the scale free topology fit
-soft_power <- 5
+soft_power <- 6
 
 # Network construction and module detection ------------------------------------------------
 adjacency <- adjacency(data_expression, power = soft_power)
@@ -85,7 +85,7 @@ adjacency <- adjacency(data_expression, power = soft_power)
 TOM <- TOMsimilarity(adjacency)
 diss_TOM <- 1 - TOM
 
-saveRDS(TOM, "TOM_NF.RDS")
+# saveRDS(TOM, "TOM_NF.RDS")
 
 gene_tree <- hclust(as.dist(diss_TOM), method = "average")
 
@@ -147,4 +147,4 @@ module_colors <- merged_colors
 module_eigengenes <- merged_ME
 module_labels <- match(module_colors, colors) - 1
 
-save(module_eigengenes, module_labels, module_colors, gene_tree, file = "NF/network_construction_NFv2.RData")
+save(module_eigengenes, module_labels, module_colors, gene_tree, file = "DCM/network_construction_DCM.RData")

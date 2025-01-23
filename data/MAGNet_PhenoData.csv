@@ -1,4 +1,4 @@
-"sample_name","tissue_source","etiology","gender","race","age","weight","height","hw","lv_mass","afib","VTVF","Diabetes","Hypertension","LVEF","RIN","Library.Pool","disease_race","minexpr","TIN.median."
+"","tissue_source","etiology","gender","race","age","weight","height","hw","lv_mass","afib","VTVF","Diabetes","Hypertension","LVEF","RIN","Library.Pool","disease_race","minexpr","TIN.median"
 "C00039","NF","NF","Male","AA",18,70,175,NA,NA,"No","No","No","No",0.37,8.4,"Magnet_10","AA_NF",7.46903303188501,72.7647800888
 "C00055","NF","NF","Male","AA",26,85,183,NA,NA,"No","No","No","No",NA,9.1,"Magnet_11","AA_NF",7.46903303188501,74.2939071853
 "C00074","NF","NF","Male","AA",17,68,173,400,NA,"No","No","No","No",0.27,7.8,"Magnet_09","AA_NF",7.46903303188501,77.4451727969

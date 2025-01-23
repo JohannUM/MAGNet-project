@@ -5,11 +5,15 @@ if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocMana
 if (!requireNamespace("here", quietly = TRUE)) install.packages()("here")
 if (!requireNamespace("WGCNA", quietly = TRUE)) BiocManager::install("WGCNA")
 if (!requireNamespace("clusterProfiler", quietly = TRUE)) BiocManager::install("clusterProfiler")
+if (!requireNamespace("org.Hs.eg.db", quietly = TRUE)) BiocManager::install("org.Hs.eg.db")
 
 # Load the necessary libraries ------------------------------------------------
 
 library(here)
 library(WGCNA)
+library(ggplot2)
+library(clusterProfiler)
+library(org.Hs.eg.db)
 
 allowWGCNAThreads()
 
@@ -17,12 +21,14 @@ allowWGCNAThreads()
 
 setwd(here("data"))
 
-data_expression <- readRDS("NF/data_NF_tmm_cpm_log.RDS")
-data_samples <- read.csv("NF/data_samples_NF_Matched_Diabetes.csv", row.names = 1)
-trait_data <- readRDS("trait_data.RDS")
-
+data_expression <- readRDS("DCM/data_DCM_tmm_cpm_log.RDS")
+data_samples <- read.csv("DCM/data_samples_DCM_Diabetes.csv", row.names = 1)
+trait_data <- readRDS("DCM/trait_data_DCM.RDS")
+# Count the number of samples with Diabetes status "Yes"
+num_diabetic_yes <- sum(data_samples$Diabetes == "Yes")
+print(paste("Number of samples with Diabetes 'Yes':", num_diabetic_yes))
 # load module_eigengenes, module_labels, module_colors and gene_tree
-load(file = "NF/network_construction_NFv2.RData")
+load(file = "DCM/network_construction_DCM.RData")
 
 data_expression <- t(data_expression) # have to transpose it here to work with the WGCNA functions
 
@@ -37,13 +43,14 @@ module_eigengenes <- orderMEs(new_module_eigengenes)
 module_trait_cor <- cor(module_eigengenes, trait_data, use = "p")
 module_trait_pvalue <- corPvalueStudent(module_trait_cor, n_samples)
 
+sizeGrWindow(9, 5)
 text_matrix <- paste(signif(module_trait_cor, 2), "\n(",
     signif(module_trait_pvalue, 1), ")",
     sep = ""
 )
 dim(text_matrix) <- dim(module_trait_cor)
-# par(mar = c(6, 8.5, 3, 1))
-labeledHeatmap(
+par(mar = c(6, 8.5, 3, 1))
+heatmap <- labeledHeatmap(
     Matrix = module_trait_cor,
     xLabels = names(trait_data),
     yLabels = names(module_eigengenes),
@@ -75,7 +82,7 @@ names(GSP_value) <- paste("p.GS.", names(diabetes), sep = "")
 
 # Look at module membership vs. gene significance ------------------------------------------------
 
-module <- "purple"
+module <- "lightgreen"
 column <- match(module, mod_names)
 module_genes <- module_colors == module
 sizeGrWindow(7, 7)
@@ -84,20 +91,21 @@ verboseScatterplot(abs(gene_module_membership[module_genes, column]), abs(gene_t
     xlab = paste("Module Membership in", module, "module"),
     ylab = "Gene significance for Diabetes",
     main = paste("Module membership vs. gene significance\n"),
-    cex.main = 1.2, cex.lab = 1.2, cex.axis = 1.2, col = module
+    cex.main = 1.2, cex.lab = 1.2, cex.axis = 1.2, col = "darkgreen"
 )
 
-genes_darkred <- rownames(data_expression)[module_genes, ]
-gs_darkred <- gene_trait_significance[module_genes, ]
-# gs_darkred <- gs_darkred[order(gs_darkred[, 1], decreasing = TRUE), , drop = FALSE]
+genes_paleturquoise <- colnames(data_expression)[module_genes]
 
-logFC <- res_df$log2FoldChange
-names(logFC) <- rownames(res_df)
-logFC <- sort(logFC, decreasing = TRUE)
-
-### GO gene set enrichment analysis ###
-gsea_go <- gseGO(
-    geneList = logFC,
-    OrgDb = "org.Hs.eg.db"
+goResults <- enrichGO(
+    gene = genes_paleturquoise,
+    OrgDb = org.Hs.eg.db,
+    keyType = "ENSEMBL",
+    ont = "BP",
+    pAdjustMethod = "BH",
+    pvalueCutoff = 0.05,
+    qvalueCutoff = 0.2
 )
-df_gsea_go <- as.data.frame(gsea_go)
+
+head(goResults)
+sizeGrWindow(7, 7)
+dotplot(goResults, showCategory = 10, title = "GO Enrichment Analysis")
