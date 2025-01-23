@@ -19,6 +19,7 @@ if (!requireNamespace("apeglm", quietly = TRUE)) BiocManager::install("apeglm")
 if (!requireNamespace("Glimma", quietly = TRUE)) BiocManager::install("Glimma")
 if (!requireNamespace("clusterProfiler", quietly = TRUE)) BiocManager::install("clusterProfiler")
 if (!requireNamespace("EnhancedVolcano", quietly = TRUE)) BiocManager::install("EnhancedVolcano")
+if (!requireNamespace("enrichplot", quietly = TRUE)) BiocManager::install("enrichplot")
 if (!requireNamespace("here", quietly = TRUE)) install.packages("here")
 if (!requireNamespace("edgeR", quietly = TRUE)) install.packages("edgeR")
 
@@ -33,6 +34,7 @@ library(edgeR)
 library(clusterProfiler)
 library(EnhancedVolcano)
 library(org.Hs.eg.db)
+library(enrichplot)
 
 # Load the data ----------------------------------------------------------------
 
@@ -51,13 +53,13 @@ ctsDCM <- rawCounts[, rownames(phenoDataDCM)]
 ddsNF <- DESeqDataSetFromMatrix(
     countData = ctsNF,
     colData = phenoDataNF,
-    design = ~ Library.Pool + RIN + Diabetes
+    design = ~ Library.Pool + RIN + TIN.median + Diabetes
 )
 
 ddsDCM <- DESeqDataSetFromMatrix(
     countData = ctsDCM,
     colData = phenoDataDCM,
-    design = ~ Library.Pool + RIN + Diabetes
+    design = ~ Library.Pool + RIN + TIN.median + Diabetes
 )
 
 
@@ -81,23 +83,41 @@ resLFC_DCM <- lfcShrink(ddsDCM, coef = "Diabetes_Yes_vs_No", type = "apeglm")
 
 par(mfrow = c(2, 2))
 
-DESeq2::plotMA(resNF, ylim = c(-2, 2))
-DESeq2::plotMA(resLFC_NF, ylim = c(-2, 2))
-
 DESeq2::plotMA(resDCM, ylim = c(-2, 2))
 DESeq2::plotMA(resLFC_DCM, ylim = c(-2, 2))
 
-EnhancedVolcano(resNF,
-    lab = rownames(resNF),
-    x = "log2FoldChange",
-    y = "pvalue"
-)
+DESeq2::plotMA(resNF, ylim = c(-2, 2))
+DESeq2::plotMA(resLFC_NF, ylim = c(-2, 2))
+
+par(mfrow = c(1, 2))
 
 EnhancedVolcano(resDCM,
-    lab = rownames(resDCM),
-    x = "log2FoldChange",
-    y = "pvalue"
+                lab = rownames(resDCM),
+                x = "log2FoldChange",
+                y = "pvalue",
+                title = "DEA Results DCM")
+
+EnhancedVolcano(resNF,
+                lab = rownames(resNF),
+                x = "log2FoldChange",
+                y = "pvalue",
+                title = "DEA Results NF")
+
+# Gene set enrichment analysis DCM ---------------------------------------------
+
+resDCM <- resDCM[order(-resDCM$log2FoldChange), ]
+gene_list_DCM <- resDCM$log2FoldChange
+names(gene_list_DCM) <- rownames(resDCM)
+gene_list_DCM <- gene_list_DCM[!is.na(gene_list_DCM)]
+
+gsea_go_DCM <- gseGO(gene_list_DCM,
+                     OrgDb = org.Hs.eg.db,
+                     keyType = "ENSEMBL",
+                     ont = "BP",
+                     eps = 1e-300
 )
+
+df_gsea_go_DCM <- as.data.frame(gsea_go_DCM)
 
 # Gene set enrichment analysis NF ----------------------------------------------
 
@@ -115,25 +135,16 @@ gsea_go_NF <- gseGO(gene_list_NF,
 
 df_gsea_go_NF <- as.data.frame(gsea_go_NF)
 
-# Gene set enrichment analysis DCM ---------------------------------------------
-
-resDCM <- resDCM[order(-resDCM$log2FoldChange), ]
-gene_list_DCM <- resDCM$log2FoldChange
-names(gene_list_DCM) <- rownames(resDCM)
-gene_list_DCM <- gene_list_DCM[!is.na(gene_list_DCM)]
-
-gsea_go_DCM <- gseGO(gene_list_DCM,
-    OrgDb = org.Hs.eg.db,
-    keyType = "ENSEMBL",
-    ont = "BP",
-    eps = 1e-300
-)
-
-df_gsea_go_DCM <- as.data.frame(gsea_go_DCM)
-
 # Dot Plot ---------------------------------------------------------------------
 
+par(mfrow = c(1, 2))
+
 dotplot(gsea_go_DCM, showCategory = 25, title = "GSE Analysis DCM")
-dotplot(gsea_go_NF, showCategory = 20, title = "GSE Analysis NF")
+dotplot(gsea_go_NF, showCategory = 25, title = "GSE Analysis NF")
+
+gsea_go_DCM_pairwise <- pairwise_termsim(gsea_go_DCM) # calculate pairwise similarities of the enriched terms using Jaccard’s similarity index
+treeplot(gsea_go_DCM_pairwise, showCategory = 25)
+gsea_go_NF_pairwise <- pairwise_termsim(gsea_go_NF) # calculate pairwise similarities of the enriched terms using Jaccard’s similarity index
+treeplot(gsea_go_NF_pairwise, showCategory = 25)
 
 ################################################################################
