@@ -16,12 +16,14 @@
 if (!requireNamespace("here", quietly = TRUE)) install.packages("here")
 if (!requireNamespace("edgeR", quietly = TRUE)) BiocManager::install("edgeR")
 if (!requireNamespace("ggplot2", quietly = TRUE)) BiocManager::install("ggplot2")
+if (!requireNamespace("limma", quietly = TRUE)) BiocManager::install("limma")
 
 # Load the necessary libraries -------------------------------------------------
 
 library(here)
 library(edgeR)
 library(ggplot2)
+library(limma)
 
 # Load data --------------------------------------------------------------------
 
@@ -31,10 +33,10 @@ data_samples <- read.csv("MAGNet_PhenoData.csv", row.names = 1)
 data_raw_counts <- read.csv("MAGNet_RawCounts.csv", as.is = T, row.names = 1)
 
 ################################################################################
-# PREPROCESSING data_samples                                                      #
+# PREPROCESSING data_samples                                                   #
 ################################################################################
 
-# Remove Donor, HCM, and PPCM data ---------------------------------------------
+# Get DCM samples --------------------------------------------------------------
 
 data_samples <- subset(data_samples, etiology == "DCM")
 
@@ -45,32 +47,42 @@ data_samples <- subset(data_samples, BMI <= 65)
 
 # Remove rows with NA in specified columns -------------------------------------
 
-columns_to_check <- c("Diabetes", "age", "race", "gender", "weight", "height", "Library.Pool", "RIN")
+columns_to_check <- c("Diabetes", "age", "race", "gender", "weight", "height", "Library.Pool", "RIN", "TIN.median", "Hypertension", "afib")
 data_samples <- data_samples[complete.cases(data_samples[, columns_to_check]), ]
 
 ################################################################################
 # DATA NORMALIZATION AND TRANSFORMATION                                        #
 ################################################################################
 
+plot_expression_density <- function(data) {
+    expression_values <- as.vector(data)
+    density <- ggplot(data.frame(expression_values), aes(x = expression_values)) +
+        geom_density(fill = "skyblue", alpha = 0.6) +
+        labs(title = "Expression Value Distribution", x = "Expression", y = "Density") +
+        theme_minimal() +
+        scale_x_continuous(breaks = scales::pretty_breaks(n = 20))
+
+    plot(density)
+}
+
 data_raw_counts <- data_raw_counts[, colnames(data_raw_counts) %in% rownames(data_samples)]
 
 # Statistical testing for confounding factors ----------------------------------
 
-traits <- c("age", "gender", "weight", "height", "Hypertension", "Library.Pool")
-test_results <- list()
+traits <- c("age", "gender", "weight", "height", "Hypertension", "afib")
+test_results <- data.frame(Test = character(), Statistic = numeric(), P.Value = numeric(), Significant = logical(), stringsAsFactors = FALSE)
 
 for (trait in traits) {
     if (is.numeric(data_samples[[trait]])) {
-        test_results[[trait]] <- t.test(data_samples[[trait]] ~ data_samples$Diabetes)
+        test <- t.test(data_samples[[trait]] ~ data_samples$Diabetes)
+        test_results[trait, ] <- c("t-test", test$statistic, test$p.value, test$p.value < 0.05)
     } else {
-        test_results[[trait]] <- chisq.test(table(data_samples[[trait]], data_samples$Diabetes))
+        test <- chisq.test(table(data_samples[[trait]], data_samples$Diabetes))
+        test_results[trait, ] <- c("chi-squared", test$statistic, test$p.value, test$p.value < 0.05)
     }
 }
 
-for (trait in traits) {
-    cat("\nTrait:", trait, "\n")
-    print(test_results[[trait]])
-}
+print(test_results)
 
 # Convert to CPM with TMM and filter -------------------------------------------
 
@@ -90,7 +102,7 @@ data_tmm_cpm_log <- as.data.frame(data_tmm_cpm_log)
 
 # Remove batch effects ---------------------------------------------------------
 
-design <- model.matrix(~ Library.Pool + RIN + Hypertension, data = data_samples)
+design <- model.matrix(~ Library.Pool + RIN, data = data_samples)
 data_tmm_cpm_log_corrected <- removeBatchEffect(data_tmm_cpm_log, covariates = design[, -1])
 
 # Check for outliers -----------------------------------------------------------
@@ -98,10 +110,9 @@ data_tmm_cpm_log_corrected <- removeBatchEffect(data_tmm_cpm_log, covariates = d
 sample_tree <- hclust(dist(t(data_tmm_cpm_log_corrected)), method = "average")
 plot(sample_tree, main = "Sample Clustering to Detect Outliers")
 
-# based on clustering  seem to be outliers, remove them
-data_samples <- data_samples[!rownames(data_samples) %in% c(""), ]
+# based on clustering C01902 P01071 P01596 seem to be outliers, remove them
+data_samples <- data_samples[!rownames(data_samples) %in% c("C01902", "P01071", "P01596"), ]
 data_tmm_cpm_log_corrected <- data_tmm_cpm_log_corrected[, colnames(data_tmm_cpm_log_corrected) %in% rownames(data_samples)]
-
 
 # Save the data ----------------------------------------------------------------
 

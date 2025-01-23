@@ -8,7 +8,6 @@
 "C01875","Cardiectomy","DCM","Male","AA",57,75.9,175.3,620,NA,"No","No","Yes","No",0.15,8.9,"Magnet_12","AA_DCM",7.46903303188501,42.7190217072,24.6989188772308
 "C01881","Cardiectomy","DCM","Female","Caucasian",41,71,176,479,NA,"No","Yes","No","No",0.2,6.5,"Magnet_11","Caucasian_DCM",7.46903303188501,56.3316262608,22.9209710743802
 "C01895","Cardiectomy","DCM","Female","Caucasian",54,86,158,269,NA,"No","No","Yes","No",0.2,6.2,"Magnet_11","Caucasian_DCM",7.46903303188501,68.8621493718,34.449607434706
-"C01902","Cardiectomy","DCM","Male","Caucasian",65,88,178,558,NA,"Yes","Yes","No","No",0.2,9.4,"Magnet_04","Caucasian_DCM",7.46903303188501,71.4450251034,27.7742709253882
 "C01904","Cardiectomy","DCM","Female","Caucasian",56,63,165,362,NA,"No","No","No","Yes",0.15,8.7,"Magnet_03","Caucasian_DCM",7.46903303188501,74.9783016474,23.1404958677686
 "C01905","Cardiectomy","DCM","Male","Caucasian",53,112,191,738,NA,"No","No","Yes","Yes",0.1,8.2,"Magnet_10","Caucasian_DCM",7.46903303188501,68.9091336243,30.7009128039253
 "C01910","Cardiectomy","DCM","Male","AA",53,90,178,826,NA,"No","No","No","No",0.2,7.7,"Magnet_04","AA_DCM",7.46903303188501,63.78198755,28.4055043555107
@@ -95,7 +94,6 @@
 "P01044","Cardiectomy","DCM","Female","AA",20,61,165,250,NA,"No","No","No","Yes",0.17,8.4,"Magnet_01.1","AA_DCM",7.46903303188501,60.5026807341,22.4058769513315
 "P01045","Cardiectomy","DCM","Male","AA",44,80,160,491,NA,"No","Yes","Yes","No",0.17,8.5,"Magnet_03","AA_DCM",7.46903303188501,64.3732730639,31.25
 "P01054","Cardiectomy","DCM","Male","AA",54,98,183,564,NA,"Yes","No","No","Yes",0.3,9.1,"Magnet_06","AA_DCM",7.46903303188501,72.1920129154,29.2633402012601
-"P01071","Cardiectomy","DCM","Male","AA",38,96,173,640,NA,"Yes","No","Yes","Yes",0.05,8.3,"Magnet_04","AA_DCM",7.46903303188501,28.9906953797,32.075912994086
 "P01077","Cardiectomy","DCM","Male","AA",50,75,175,592,NA,"Yes","No","No","Yes",0.2,7.9,"Magnet_09","AA_DCM",7.46903303188501,65.9920402007,24.4897959183673
 "P01095","Cardiectomy","DCM","Female","AA",39,76,152,303,NA,"No","Yes","Yes","Yes",0.05,7.6,"Magnet_11","AA_DCM",7.46903303188501,79.8620571395,32.8947368421053
 "P01097","Cardiectomy","DCM","Female","AA",56,74,173,547,NA,"Yes",NA,"No","No",0.1,6.9,"Magnet_09","AA_DCM",7.46903303188501,80.322183303,24.7251829329413
@@ -146,7 +144,6 @@
 "P01568","Cardiectomy","DCM","Female","AA",67,70,170,350,212,"Yes","No","Yes","No",0.2,8.9,"Magnet_04","AA_DCM",7.46903303188501,66.5596958338,24.2214532871972
 "P01573","Cardiectomy","DCM","Female","Caucasian",58,96,163,310,203,"No","No","Yes","Yes",0.32,8.7,"Magnet_12","Caucasian_DCM",7.46903303188501,34.5553430186,36.1323346757499
 "P01585","Cardiectomy","DCM","Male","Caucasian",59,80,173,372,217,"Yes","Yes","Yes","Yes",0.4,8.1,"Magnet_08","Caucasian_DCM",7.46903303188501,57.6265033496,26.7299274950717
-"P01596","Cardiectomy","DCM","Male","Caucasian",67,81,175,465,306,"Yes","No","Yes","Yes",0.25,9.1,"Magnet_08","Caucasian_DCM",7.46903303188501,38.1644991793,26.4489795918367
 "P01597","Cardiectomy","DCM","Male","AA",34,80,163,313,206,"Yes","No","No","Yes",0.2,8.9,"Magnet_08","AA_DCM",7.46903303188501,67.0272104661,30.1102788964583
 "P01605","Cardiectomy","DCM","Male","AA",57,103,191,580,429,"Yes","Yes","No","Yes",0.15,9,"Magnet_10","AA_DCM",7.46903303188501,71.5688023351,28.2338751678956
 "P01606","Cardiectomy","DCM","Female","Caucasian",56,46,158,390,270,"No","Yes","Yes","No",0.1,8.7,"Magnet_04","Caucasian_DCM",7.46903303188501,71.5654569743,18.4265342092613
